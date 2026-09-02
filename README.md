@@ -18,6 +18,10 @@ Define long and short read libraries under `raw_libraries` and/or
 sample-specific entries add libraries only for their matching sample ID. At
 least one long- or short-read library is required.
 Final assembly directories are copied to `<outdir>/<sample-id>/`.
+Incomplete assemblies persist under `<outdir>/.resume/<sample-id>/`; rerun with
+`-resume` to reuse completed Nextflow tasks and continue interrupted assemblies.
+Remove an assembler's directory there before rerunning it with changed inputs or
+parameters.
 
 Required tools are `seqkit`, `minimap2`, `bowtie2`, `samtools`, `pigz`, and
 either Flye 2.9.6 or Myloasm >= 0.6.0 with `mylotools`.
