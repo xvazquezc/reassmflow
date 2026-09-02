@@ -23,7 +23,6 @@ Conda environments are assigned by process label: `mapping` uses
 short-read assembly processes use `envs/sr-env.yaml`. Enable Conda with
 `nextflow run main.nf -params-file config.yml -with-conda`.
 
-For UNSW Katana, use `-c conf/unsw_katana.config` after exporting
-`REASSMFLOW_MAPPING_ENV`, `REASSMFLOW_LR_ASSM_ENV`, and
-`REASSMFLOW_SR_ASSM_ENV` as absolute paths to the existing shared Conda
-environment directories.
+For UNSW Katana, set `conda_envs.mapping`, `conda_envs.lr_assm`, and
+`conda_envs.sr_assm` in `config.yml` to absolute paths for the existing shared
+Conda environment directories, then use `-c conf/unsw_katana.config`.

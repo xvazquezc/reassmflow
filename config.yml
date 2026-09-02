@@ -3,4 +3,8 @@
 input_csv: null
 global_libraries: {}
 raw_libraries: {}
+conda_envs:
+  mapping: null
+  lr_assm: null
+  sr_assm: null
 outdir: results
