@@ -245,28 +245,36 @@ workflow {
 
   def samples = channel.fromPath(params.input_csv, checkIfExists: true).splitCsv(header: true).map { row -> tuple(row.id as String, file(row.path, checkIfExists: true)) }
   def ref = CONCAT_REFERENCE(samples)
-  def sampleIds = samples.map { id, refdir -> id }
-  def longSpecs = raw.collectMany { id, library -> (library.long_reads ?: []).collect { p -> tuple(id as String, p as String) } }
-  def shortSpecs = raw.collectMany { id, library -> (library.short_reads ?: []).withIndex().collect { z, n -> tuple(id as String, "${id}_short_${n + 1}", z) } }
-  def globalLongSpecs = globalLibraries.collectMany { name, library -> (library.long_reads ?: []).collect { p -> p as String } }
-  def globalShortSpecs = globalLibraries.collectMany { name, library -> (library.short_reads ?: []).collect { x -> x } }
+  def globalLongPaths = globalLibraries.collectMany { name, library -> library.long_reads ?: [] }
+  def globalShortLibraries = globalLibraries.collectMany { name, library -> library.short_reads ?: [] }
 
   def longOut = null
-  if (longSpecs || globalLongSpecs) {
-    def individualLongReads = channel.fromList(longSpecs).flatMap { id, p -> files(p).collect { f -> tuple(id, f) } }
-    def globalLongReads = sampleIds.combine(channel.fromList(globalLongSpecs)).flatMap { id, p -> files(p).collect { f -> tuple(id, f) } }
-    def longReads = individualLongReads.concat(globalLongReads)
-    longOut = MERGE_LONG_BAMS(MINIMAP2_MAP(longReads.join(ref.ref)).bam.groupTuple())
+  if (raw.values().any { it.long_reads } || globalLongPaths) {
+    def longReads = samples.flatMap { id, refdir ->
+      def paths = (raw[id]?.long_reads ?: []) + globalLongPaths
+      def resolved = paths.collectMany { path -> files(path) }
+      def key = groupKey(id, resolved.size())
+      resolved.collect { read -> tuple(id, key, read) }
+    }
+    def mappedLongReads = longReads.join(ref.ref).map { id, key, read, reference -> tuple(key, read, reference) }
+    longOut = MERGE_LONG_BAMS(MINIMAP2_MAP(mappedLongReads).bam.groupTuple())
     FLYE_META_ASSEMBLY(longOut.reads)
     MYLOASM_ASSEMBLY(longOut.reads)
   }
 
   def shortOut = null
-  if (shortSpecs || globalShortSpecs) {
-    def individualShortReads = channel.fromList(shortSpecs).map { id, lib, x -> tuple(id, lib, file(x.r1, checkIfExists: true), file(x.r2, checkIfExists: true), x.singletons ? file(x.singletons, checkIfExists: true) : file('/dev/null')) }
-    def globalShortReads = sampleIds.combine(channel.fromList(globalShortSpecs)).map { id, x -> tuple(id, "${id}_global_short_${x.r1.hashCode()}", file(x.r1, checkIfExists: true), file(x.r2, checkIfExists: true), x.singletons ? file(x.singletons, checkIfExists: true) : file('/dev/null')) }
-    def shortReads = individualShortReads.concat(globalShortReads)
-    shortOut = MERGE_SHORT_BAMS(BOWTIE2_MAP(shortReads.join(BOWTIE2_BUILD(ref.ref).index)).bam.groupTuple())
+  if (raw.values().any { it.short_reads } || globalShortLibraries) {
+    def shortReads = samples.flatMap { id, refdir ->
+      def libraries = (raw[id]?.short_reads ?: []) + globalShortLibraries
+      def key = groupKey(id, libraries.size())
+      libraries
+        .withIndex()
+        .collect { library, index ->
+          tuple(id, key, "${id}_short_${index + 1}", file(library.r1, checkIfExists: true), file(library.r2, checkIfExists: true), library.singletons ? file(library.singletons, checkIfExists: true) : file('/dev/null'))
+        }
+    }
+    def mappedShortReads = shortReads.join(BOWTIE2_BUILD(ref.ref).index).map { id, key, library, r1, r2, singletons, index -> tuple(key, library, r1, r2, singletons, index) }
+    shortOut = MERGE_SHORT_BAMS(BOWTIE2_MAP(mappedShortReads).bam.groupTuple())
     MEGAHIT_DEFAULT_ASSEMBLY(shortOut.reads)
   }
 
