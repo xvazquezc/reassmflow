@@ -13,6 +13,9 @@ process CONCAT_REFERENCE {
   script:
   """find -L ${refdir} -maxdepth 1 -type f \\( -name '*.fa' -o -name '*.fna' -o -name '*.fasta' \\) -print -quit | grep -q . || { echo "No FASTA files found in ${refdir}" >&2; exit 1; }
   find -L ${refdir} -maxdepth 1 -type f \\( -name '*.fa' -o -name '*.fna' -o -name '*.fasta' \\) -print0 | sort -z | xargs -0 cat | seqkit rename -n > reference.fasta"""
+
+  stub:
+  """printf '>stub_reference\\nACGT\\n' > reference.fasta"""
 }
 process MINIMAP2_MAP {
   tag { id }
@@ -26,6 +29,9 @@ process MINIMAP2_MAP {
 
   script:
   """minimap2 -t ${task.cpus} -ax lr:hq ${ref} ${reads} | samtools view -@ ${task.cpus} -bF 4 - | samtools sort -@ ${task.cpus} -o ${id}.${task.index}.bam -"""
+
+  stub:
+  """touch ${id}.${task.index}.bam"""
 }
 process MERGE_LONG_BAMS {
   tag { id }
@@ -39,6 +45,9 @@ process MERGE_LONG_BAMS {
 
   script:
   """samtools merge -@ ${task.cpus} -f merged.bam ${bams.join(' ')}; samtools fastq -@ ${task.cpus} merged.bam | pigz -p ${task.cpus} > long_recovered.fastq.gz"""
+
+  stub:
+  """touch long_recovered.fastq.gz"""
 }
 process FLYE_META_ASSEMBLY {
   tag { id }
@@ -61,6 +70,9 @@ process FLYE_META_ASSEMBLY {
   fi
   find "\$state_dir" -type f -name '*dump' -delete
   cp -a "\$state_dir" flye_out"""
+
+  stub:
+  """mkdir -p flye_out; touch flye_out/assembly.fasta"""
 }
 process MYLOASM_ASSEMBLY {
   tag { id }
@@ -84,6 +96,9 @@ process MYLOASM_ASSEMBLY {
   rm -rf "\$state_dir/binary_temp"
   mylotools annotate-gfa --gfa "\$state_dir/final_contig_graph.gfa" --fasta "\$state_dir/assembly_primary.fa" --output "\$state_dir/final_contig_graph.annot.gfa"
   cp -a "\$state_dir" mylo_out"""
+
+  stub:
+  """mkdir -p mylo_out; touch mylo_out/assembly_primary.fa mylo_out/final_contig_graph.annot.gfa"""
 }
 process BOWTIE2_BUILD {
   tag { id }
@@ -97,6 +112,9 @@ process BOWTIE2_BUILD {
 
   script:
   """bowtie2-build ${ref} reference.fasta"""
+
+  stub:
+  """touch reference.fasta.1.bt2"""
 }
 process BOWTIE2_MAP {
   tag { "${id}:${lib}" }
@@ -110,6 +128,9 @@ process BOWTIE2_MAP {
 
   script:
   """bowtie2 -p ${task.cpus} -x reference.fasta -1 ${r1} -2 ${r2} -U ${single} | samtools view -@ ${task.cpus} -bF 12 - | samtools sort -@ ${task.cpus} -o ${lib}.bam -"""
+
+  stub:
+  """touch ${lib}.bam"""
 }
 process MERGE_SHORT_BAMS {
   tag { id }
@@ -123,6 +144,9 @@ process MERGE_SHORT_BAMS {
 
   script:
   """samtools merge -@ ${task.cpus} -f merged.bam ${bams.join(' ')}; samtools sort -@ ${task.cpus} -n merged.bam -o n.bam; samtools fastq -@ ${task.cpus} n.bam -1 sr_R1.fastq.gz -2 sr_R2.fastq.gz -s sr_singles.fastq.gz -0 /dev/null -"""
+
+  stub:
+  """touch sr_R1.fastq.gz sr_R2.fastq.gz sr_singles.fastq.gz"""
 }
 process MEGAHIT_DEFAULT_ASSEMBLY {
   tag { id }
@@ -146,6 +170,9 @@ process MEGAHIT_DEFAULT_ASSEMBLY {
   kmer=\$(find "\$state_dir/intermediate_contigs" -name 'k*.contigs.fa' -printf '%f\\n' | sed -E 's/^k([0-9]+)\\.contigs\\.fa\$/\\1/' | sort -n | tail -1)
   megahit_toolkit contig2fastg "\$kmer" "\$state_dir/intermediate_contigs/k\${kmer}.contigs.fa" > "\$state_dir/k\${kmer}.contigs.fastg"
   cp -a "\$state_dir" megahit-default"""
+
+  stub:
+  """mkdir -p megahit-default; touch megahit-default/final.contigs.fa"""
 }
 process SPADES_META_HYBRID {
   tag { id }
@@ -167,6 +194,9 @@ process SPADES_META_HYBRID {
     spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid"""
+
+  stub:
+  """mkdir -p spades-meta-hybrid; touch spades-meta-hybrid/contigs.fasta"""
 }
 process SPADES_META_HYBRID_KEXT {
   tag { id }
@@ -188,6 +218,9 @@ process SPADES_META_HYBRID_KEXT {
     spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext"""
+
+  stub:
+  """mkdir -p spades-meta-hybrid-kext; touch spades-meta-hybrid-kext/contigs.fasta"""
 }
 process SPADES_META_KEXT {
   tag { id }
@@ -209,6 +242,9 @@ process SPADES_META_KEXT {
     spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-kext"""
+
+  stub:
+  """mkdir -p spades-meta-kext; touch spades-meta-kext/contigs.fasta"""
 }
 process SPADES_META_HYBRID_KEXT_TRUSTED {
   tag { id }
@@ -230,6 +266,9 @@ process SPADES_META_HYBRID_KEXT_TRUSTED {
     spades.py -t ${task.cpus} -m 100 -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext-trusted"""
+
+  stub:
+  """mkdir -p spades-meta-hybrid-kext-trusted; touch spades-meta-hybrid-kext-trusted/contigs.fasta"""
 }
 
 workflow {
