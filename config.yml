@@ -8,3 +8,5 @@ conda_envs:
   lr_assm: null
   sr_assm: null
 outdir: results
+pbs_queue: null
+pbs_project: null

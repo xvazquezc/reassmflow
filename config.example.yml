@@ -2,7 +2,8 @@
 # input_csv must contain the columns: id,path
 input_csv: samples.csv
 
-# Libraries can be defined once globally and reused by multiple sample IDs.
+# Libraries can be defined once globally and selected by a sample's `libraries`
+# list under raw_libraries.
 global_libraries:
   shared_long_reads:
     long_reads:
@@ -13,7 +14,11 @@ global_libraries:
         r2: "/srv/scratch/burnslab/xabi/sr-binning/reads/new-all_trimmed_reads_R2.fastq.gz"
         singletons: "/srv/scratch/burnslab/xabi/sr-binning/reads/new-all_trimmed_reads_singles.fastq.gz"
 
-raw_libraries: {}
+raw_libraries:
+  sample_01:
+    libraries:
+      - shared_long_reads
+      - shared_short_reads
 
 # Existing shared Conda environment directories, used by the Katana config.
 conda_envs:

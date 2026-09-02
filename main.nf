@@ -1,5 +1,19 @@
 nextflow.enable.dsl=2
 
+def librariesForSample(id, sampleLibraries, globalLibraries) {
+  def libraryNames=sampleLibraries.libraries ?: []
+  if (libraryNames instanceof CharSequence) {
+    libraryNames=[libraryNames]
+  }
+  def selected=libraryNames.collect { libraryName ->
+    if (!globalLibraries.containsKey(libraryName)) {
+      error "Sample '${id}' selects undefined global library '${libraryName}'."
+    }
+    globalLibraries[libraryName]
+  }
+  [sampleLibraries] + selected
+}
+
 process CONCAT_REFERENCE {
   tag { id }
   label 'mapping'
@@ -8,7 +22,8 @@ process CONCAT_REFERENCE {
   output:
   tuple val(id), path('reference.fasta'), emit: ref
   script:
-  """find -L ${refdir} -maxdepth 1 -type f \\( -name '*.fa' -o -name '*.fna' -o -name '*.fasta' \\) -print0 | xargs -r -0 cat | seqkit rename -n > reference.fasta""" }
+  """find -L ${refdir} -maxdepth 1 -type f \\( -name '*.fa' -o -name '*.fna' -o -name '*.fasta' \\) -print -quit | grep -q . || { echo "No FASTA files found in ${refdir}" >&2; exit 1; }
+  find -L ${refdir} -maxdepth 1 -type f \\( -name '*.fa' -o -name '*.fna' -o -name '*.fasta' \\) -print0 | sort -z | xargs -0 cat | seqkit rename -n > reference.fasta""" }
 process MINIMAP2_MAP {
   tag { id }
   label 'mapping'
@@ -17,7 +32,7 @@ process MINIMAP2_MAP {
   output:
   tuple val(id), path('*.bam'), emit: bam
   script:
-  """minimap2 -t ${task.cpus} -ax lr:hq ${ref} ${reads} | samtools view -@ ${task.cpus} -bF 4 - | samtools sort -@ ${task.cpus} -o ${id}.bam -""" }
+  """minimap2 -t ${task.cpus} -ax lr:hq ${ref} ${reads} | samtools view -@ ${task.cpus} -bF 4 - | samtools sort -@ ${task.cpus} -o ${id}.${task.index}.bam -""" }
 process MERGE_LONG_BAMS {
   tag { id }
   label 'mapping'
@@ -30,6 +45,7 @@ process MERGE_LONG_BAMS {
 process FLYE_META_ASSEMBLY {
   tag { id }
   label 'lr_assm'
+  publishDir { "${params.outdir}/${id}/flye" }, mode: 'copy'
   input:
   tuple val(id), path(reads)
   output:
@@ -39,6 +55,7 @@ process FLYE_META_ASSEMBLY {
 process MYLOASM_ASSEMBLY {
   tag { id }
   label 'lr_assm'
+  publishDir { "${params.outdir}/${id}/myloasm" }, mode: 'copy'
   input:
   tuple val(id), path(reads)
   output:
@@ -75,6 +92,7 @@ process MERGE_SHORT_BAMS {
 process MEGAHIT_DEFAULT_ASSEMBLY {
   tag { id }
   label 'sr_assm'
+  publishDir { "${params.outdir}/${id}/megahit-default" }, mode: 'copy'
   input:
   tuple val(id), path(r1), path(r2), path(single)
   output:
@@ -84,6 +102,7 @@ process MEGAHIT_DEFAULT_ASSEMBLY {
 process SPADES_META_HYBRID {
   tag { id }
   label 'sr_assm'
+  publishDir { "${params.outdir}/${id}/spades-meta-hybrid" }, mode: 'copy'
   input:
   tuple val(id), path(r1), path(r2), path(s), path(lr)
   output:
@@ -93,6 +112,7 @@ process SPADES_META_HYBRID {
 process SPADES_META_HYBRID_KEXT {
   tag { id }
   label 'sr_assm'
+  publishDir { "${params.outdir}/${id}/spades-meta-hybrid-kext" }, mode: 'copy'
   input:
   tuple val(id), path(r1), path(r2), path(s), path(lr)
   output:
@@ -102,6 +122,7 @@ process SPADES_META_HYBRID_KEXT {
 process SPADES_META_KEXT {
   tag { id }
   label 'sr_assm'
+  publishDir { "${params.outdir}/${id}/spades-meta-kext" }, mode: 'copy'
   input:
   tuple val(id), path(r1), path(r2), path(s), path(lr)
   output:
@@ -111,6 +132,7 @@ process SPADES_META_KEXT {
 process SPADES_META_HYBRID_KEXT_TRUSTED {
   tag { id }
   label 'sr_assm'
+  publishDir { "${params.outdir}/${id}/spades-meta-hybrid-kext-trusted" }, mode: 'copy'
   input:
   tuple val(id), path(r1), path(r2), path(s), path(lr), path(trusted)
   output:
@@ -119,17 +141,41 @@ process SPADES_META_HYBRID_KEXT_TRUSTED {
   """spades.py -t ${task.cpus} -m 100 -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o spades-meta-hybrid-kext-trusted""" }
 
 workflow {
+  if (!params.input_csv) {
+    error 'Specify input_csv in a parameter file or with --input_csv.'
+  }
+
+  def raw=params.raw_libraries ?: [:]
+  if (!raw) {
+    error 'Specify at least one sample under raw_libraries.'
+  }
+
+  def globalLibraries=params.global_libraries ?: [:]
   def samples=channel.fromPath(params.input_csv,checkIfExists:true).splitCsv(header:true).map { row -> tuple(row.id as String,file(row.path,checkIfExists:true)) }
   def ref=CONCAT_REFERENCE(samples)
-  def raw=params.raw_libraries ?: [:]
-  def longSpecs=raw.collectMany { id,x -> (x.long_reads ?: []).collect { p -> tuple(id as String,p as String) } }
-  def longReads=channel.fromList(longSpecs).flatMap { id,p -> files(p).collect { f -> tuple(id,f) } }
-  def longOut=MERGE_LONG_BAMS(MINIMAP2_MAP(longReads.join(ref.ref)).bam.groupTuple())
-  FLYE_META_ASSEMBLY(longOut.reads); MYLOASM_ASSEMBLY(longOut.reads)
-  def shortSpecs=raw.collectMany { id,x -> (x.short_reads ?: []).withIndex().collect { z,n -> tuple(id as String,"${id}_short_${n+1}",z) } }
-  def shortReads=channel.fromList(shortSpecs).map { id,lib,x -> tuple(id,lib,file(x.r1,checkIfExists:true),file(x.r2,checkIfExists:true),x.singletons ? file(x.singletons,checkIfExists:true) : file('/dev/null')) }
-  def shortOut=MERGE_SHORT_BAMS(BOWTIE2_MAP(shortReads.join(BOWTIE2_BUILD(ref.ref).index)).bam.groupTuple())
-  MEGAHIT_DEFAULT_ASSEMBLY(shortOut.reads)
-  def h=shortOut.reads.join(longOut.reads)
-  SPADES_META_HYBRID(h); SPADES_META_HYBRID_KEXT(h); SPADES_META_KEXT(h); SPADES_META_HYBRID_KEXT_TRUSTED(h.join(ref.ref))
+  def longSpecs=raw.collectMany { id,x -> librariesForSample(id,x,globalLibraries).collectMany { library -> (library.long_reads ?: []).collect { p -> tuple(id as String,p as String) } } }
+  def shortSpecs=raw.collectMany { id,x -> librariesForSample(id,x,globalLibraries).collectMany { library -> (library.short_reads ?: []).withIndex().collect { z,n -> tuple(id as String,"${id}_short_${n+1}",z) } } }
+
+  def longOut=null
+  if (longSpecs) {
+    def longReads=channel.fromList(longSpecs).flatMap { id,p -> files(p).collect { f -> tuple(id,f) } }
+    longOut=MERGE_LONG_BAMS(MINIMAP2_MAP(longReads.join(ref.ref)).bam.groupTuple())
+    FLYE_META_ASSEMBLY(longOut.reads)
+    MYLOASM_ASSEMBLY(longOut.reads)
+  }
+
+  def shortOut=null
+  if (shortSpecs) {
+    def shortReads=channel.fromList(shortSpecs).map { id,lib,x -> tuple(id,lib,file(x.r1,checkIfExists:true),file(x.r2,checkIfExists:true),x.singletons ? file(x.singletons,checkIfExists:true) : file('/dev/null')) }
+    shortOut=MERGE_SHORT_BAMS(BOWTIE2_MAP(shortReads.join(BOWTIE2_BUILD(ref.ref).index)).bam.groupTuple())
+    MEGAHIT_DEFAULT_ASSEMBLY(shortOut.reads)
+  }
+
+  if (longOut && shortOut) {
+    def hybridReads=shortOut.reads.join(longOut.reads)
+    SPADES_META_HYBRID(hybridReads)
+    SPADES_META_HYBRID_KEXT(hybridReads)
+    SPADES_META_KEXT(hybridReads)
+    SPADES_META_HYBRID_KEXT_TRUSTED(hybridReads.join(ref.ref))
+  }
 }
