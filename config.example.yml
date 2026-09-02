@@ -1,0 +1,21 @@
+# Example parameter file. Replace all paths and sample IDs for your project.
+# input_csv must contain the columns: id,path
+input_csv: samples.csv
+
+# Libraries can be defined once globally and reused by multiple sample IDs.
+global_libraries:
+  shared_long_reads:
+    long_reads:
+      - "/data/shared/long/*.fastq.gz"
+
+raw_libraries:
+  sample_01:
+    use_global: [shared_long_reads]
+    long_reads:
+      - "raw/sample_01/long/*.{fastq,fastq.gz,fasta}"
+    short_reads:
+      - r1: "raw/sample_01/short/*_R1.fastq.gz"
+        r2: "raw/sample_01/short/*_R2.fastq.gz"
+        singletons: null
+
+outdir: results

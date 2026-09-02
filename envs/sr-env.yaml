@@ -1,0 +1,8 @@
+name: sr-assm
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - megahit
+  - spades>=4.2.0

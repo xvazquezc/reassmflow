@@ -1,0 +1,9 @@
+name: lr-assm
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - flye=2.9.6
+  - myloasm>=0.6.0
+  - mylotools

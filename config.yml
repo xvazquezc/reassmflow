@@ -1,0 +1,6 @@
+# Copy config.example.yml and replace these values with accessible input paths.
+# Run with: nextflow run main.nf -params-file config.yml -with-conda
+input_csv: null
+global_libraries: {}
+raw_libraries: {}
+outdir: results

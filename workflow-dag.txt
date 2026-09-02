@@ -1,0 +1,38 @@
+graph 1 23.861 6.7222
+node references 1.2292 1.9306 2.4583 0.52778 "Reference FASTA directories\n(samples.csv: id, path)" rounded box black lightgrey
+node long_libraries 9.1528 2.8333 1.6806 0.52778 "Long-read libraries\n(config.yml)" rounded box black lightgrey
+node short_libraries 9.1528 1.1528 2.9444 0.52778 "Validated paired short-read libraries\n(config.yml)" rounded box black lightgrey
+node concat 4.9931 1.9306 2.1528 0.52778 "CONCAT_REFERENCE\n[mapping]" rounded box black lightgrey
+node minimap 13.542 3.5972 1.6944 0.52778 "MINIMAP2_MAP\n[mapping]" rounded box black lightgrey
+node merge_long 16.521 4.2083 2.1528 0.52778 "MERGE_LONG_BAMS\n[mapping]" rounded box black lightgrey
+node flye 21.91 6.0417 2.4167 0.52778 "FLYE_META_ASSEMBLY\n[lr_assm]" rounded box black lightgrey
+node myloasm 21.91 5.2639 2.3056 0.52778 "MYLOASM_ASSEMBLY\n[lr_assm]" rounded box black lightgrey
+node bowtie_index 9.1528 1.9306 1.7361 0.52778 "BOWTIE2_BUILD\n[mapping]" rounded box black lightgrey
+node bowtie_map 13.542 1.5694 1.5694 0.52778 "BOWTIE2_MAP\n[mapping]" rounded box black lightgrey
+node merge_short 16.521 1.5694 2.2361 0.52778 "MERGE_SHORT_BAMS\n[mapping]" rounded box black lightgrey
+node megahit 21.91 1.0417 3.1528 0.52778 "MEGAHIT_DEFAULT_ASSEMBLY\n[sr_assm]" rounded box black lightgrey
+node spades_hybrid 21.91 3.2917 2.375 0.52778 "SPADES_META_HYBRID\n[sr_assm]" rounded box black lightgrey
+node spades_kext 21.91 4.3472 2.9722 0.52778 "SPADES_META_HYBRID_KEXT\n[sr_assm]" rounded box black lightgrey
+node spades_trusted 21.91 0.26389 3.9028 0.52778 "SPADES_META_HYBRID_KEXT_TRUSTED\n[sr_assm]" rounded box black lightgrey
+node spades_meta_kext 21.91 1.9583 2.1528 0.52778 "SPADES_META_KEXT\n[sr_assm]" rounded box black lightgrey
+edge references concat 4 2.4612 1.9306 2.8821 1.9306 3.3533 1.9306 3.7732 1.9306 "FASTA files" 3.1875 2.0347 solid black
+edge long_libraries minimap 7 9.9954 2.976 10.658 3.0904 11.611 3.2556 12.444 3.4028 12.481 3.4093 12.518 3.4159 12.556 3.4226 solid black
+edge short_libraries bowtie_map 7 10.626 1.2286 11.194 1.2658 11.851 1.3182 12.444 1.3889 12.499 1.3954 12.556 1.4028 12.612 1.4107 "atomic R1/R2 tuples" 11.66 1.4931 solid black
+edge concat minimap 7 5.4225 2.1945 5.9321 2.5029 6.833 2.9994 7.6806 3.2222 9.3515 3.6615 11.379 3.6829 12.555 3.6476 "reference.fasta" 9.1528 3.7292 solid black
+edge concat bowtie_index 4 6.071 1.9306 6.7077 1.9306 7.5118 1.9306 8.1371 1.9306 "reference.fasta" 6.875 2.0347 solid black
+edge concat spades_trusted 10 5.3321 1.6659 6.0012 1.149 7.5988 0.055556 9.1389 0.055556 9.1389 0.055556 9.1389 0.055556 16.535 0.055556 17.616 0.055556 18.818 0.098363 19.81 0.14517 "trusted contigs" 13.542 0.15972 solid black
+edge minimap merge_long 4 14.389 3.7699 14.673 3.8287 14.996 3.8956 15.303 3.9591 BAMs 14.896 4.0208 solid black
+edge merge_long flye 7 16.777 4.4738 17.029 4.7324 17.447 5.1154 17.889 5.3194 18.727 5.7067 19.754 5.8868 20.558 5.9703 "long_recovered.fastq.gz" 18.799 5.9514 solid black
+edge merge_long myloasm 7 17.124 4.4738 17.358 4.5696 17.632 4.6702 17.889 4.7361 18.785 4.9661 19.821 5.0992 20.615 5.1742 "long_recovered.fastq.gz" 18.799 5.1597 solid black
+edge merge_long spades_hybrid 7 17.599 4.1529 18.218 4.1089 19.012 4.0325 19.708 3.9028 20.117 3.8266 20.561 3.7093 20.941 3.5978 "long_recovered.fastq.gz" 18.799 4.2292 solid black
+edge merge_long spades_kext 7 17.601 4.3999 17.698 4.4123 17.795 4.4229 17.889 4.4306 18.676 4.4947 19.552 4.4856 20.284 4.4556 "long_recovered.fastq.gz" 18.799 4.5764 solid black
+edge merge_long spades_trusted 13 16.618 3.9441 16.78 3.4772 17.186 2.513 17.889 2.0556 18.574 1.61 19.11 2.3483 19.708 1.7917 20.088 1.4387 19.589 1.0159 19.958 0.65278 19.971 0.63993 19.985 0.62745 19.998 0.61533 "long_recovered.fastq.gz" 18.799 2.1597 solid black
+edge merge_long spades_meta_kext 10 16.799 3.941 17.055 3.6991 17.465 3.3531 17.889 3.1667 18.64 2.8358 18.919 3.074 19.708 2.8472 20.224 2.6989 20.785 2.4698 21.209 2.2813 "long_recovered.fastq.gz" 18.799 3.2708 solid black
+edge bowtie_index bowtie_map 4 10.023 1.8596 10.77 1.7978 11.852 1.7082 12.615 1.645 "Bowtie2 index" 11.66 1.8819 solid black
+edge bowtie_map merge_short 4 14.327 1.5694 14.613 1.5694 14.944 1.5694 15.262 1.5694 BAMs 14.896 1.6736 solid black
+edge merge_short megahit 7 17.57 1.3052 17.677 1.2839 17.785 1.2649 17.889 1.25 18.639 1.1429 19.475 1.0892 20.188 1.0629 "sr_R1/R2 + singles" 18.799 1.3542 solid black
+edge merge_short spades_hybrid 10 16.933 1.8363 17.194 1.9996 17.549 2.1994 17.889 2.3194 18.663 2.5931 18.909 2.4502 19.708 2.6389 20.122 2.7367 20.574 2.8672 20.958 2.9859 "sr_R1/R2 + singles" 18.799 2.7431 solid black
+edge merge_short spades_kext 10 16.652 1.8369 16.845 2.2436 17.272 3.009 17.889 3.375 18.592 3.7921 18.912 3.4537 19.708 3.6389 20.157 3.7433 20.646 3.8976 21.048 4.0356 "sr_R1/R2 + singles" 18.799 3.7431 solid black
+edge merge_short spades_trusted 7 16.932 1.304 17.193 1.1424 17.548 0.94597 17.889 0.83333 18.501 0.63079 19.189 0.50028 19.82 0.41619 "sr_R1/R2 + singles" 18.799 0.9375 solid black
+edge merge_short spades_meta_kext 7 17.642 1.5295 18.253 1.5187 19.024 1.5236 19.708 1.5833 20.029 1.6114 20.374 1.6611 20.693 1.7154 "sr_R1/R2 + singles" 18.799 1.6875 solid black
+stop

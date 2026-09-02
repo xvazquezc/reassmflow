@@ -1,0 +1,46 @@
+digraph reassmflow {
+  rankdir=LR;
+  graph [label="reassmflow", labelloc=t, fontsize=20];
+  node [shape=box, style="rounded"];
+
+  references [label="Reference FASTA directories\n(samples.csv: id, path)"];
+  long_libraries [label="Long-read libraries\n(config.yml)"];
+  short_libraries [label="Validated paired short-read libraries\n(config.yml)"];
+
+  concat [label="CONCAT_REFERENCE\n[mapping]"];
+  minimap [label="MINIMAP2_MAP\n[mapping]"];
+  merge_long [label="MERGE_LONG_BAMS\n[mapping]"];
+  flye [label="FLYE_META_ASSEMBLY\n[lr_assm]"];
+  myloasm [label="MYLOASM_ASSEMBLY\n[lr_assm]"];
+
+  bowtie_index [label="BOWTIE2_BUILD\n[mapping]"];
+  bowtie_map [label="BOWTIE2_MAP\n[mapping]"];
+  merge_short [label="MERGE_SHORT_BAMS\n[mapping]"];
+  megahit [label="MEGAHIT_DEFAULT_ASSEMBLY\n[sr_assm]"];
+  spades_hybrid [label="SPADES_META_HYBRID\n[sr_assm]"];
+  spades_kext [label="SPADES_META_HYBRID_KEXT\n[sr_assm]"];
+  spades_trusted [label="SPADES_META_HYBRID_KEXT_TRUSTED\n[sr_assm]"];
+  spades_meta_kext [label="SPADES_META_KEXT\n[sr_assm]"];
+
+  references -> concat [label="FASTA files"];
+  concat -> minimap [label="reference.fasta"];
+  concat -> bowtie_index [label="reference.fasta"];
+  concat -> spades_trusted [label="trusted contigs"];
+  long_libraries -> minimap;
+  minimap -> merge_long [label="BAMs"];
+  merge_long -> flye [label="long_recovered.fastq.gz"];
+  merge_long -> myloasm [label="long_recovered.fastq.gz"];
+
+  short_libraries -> bowtie_map [label="atomic R1/R2 tuples"];
+  bowtie_index -> bowtie_map [label="Bowtie2 index"];
+  bowtie_map -> merge_short [label="BAMs"];
+  merge_short -> megahit [label="sr_R1/R2 + singles"];
+  merge_short -> spades_hybrid [label="sr_R1/R2 + singles"];
+  merge_short -> spades_kext [label="sr_R1/R2 + singles"];
+  merge_short -> spades_trusted [label="sr_R1/R2 + singles"];
+  merge_short -> spades_meta_kext [label="sr_R1/R2 + singles"];
+  merge_long -> spades_hybrid [label="long_recovered.fastq.gz"];
+  merge_long -> spades_kext [label="long_recovered.fastq.gz"];
+  merge_long -> spades_trusted [label="long_recovered.fastq.gz"];
+  merge_long -> spades_meta_kext [label="long_recovered.fastq.gz"];
+}
