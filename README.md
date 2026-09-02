@@ -13,9 +13,10 @@ nextflow run main.nf -params-file config.yml
 Pass `config.yml` explicitly because Nextflow automatically loads
 `nextflow.config`, but not YAML parameter files.
 
-Define long and short read libraries under `raw_libraries`. A sample can reuse
-a library from `global_libraries` by listing its name in `libraries`; see
-`config.example.yml`. At least one long- or short-read library is required.
+Define long and short read libraries under `raw_libraries` and/or
+`global_libraries`. Global libraries apply to every sample in `input_csv`;
+sample-specific entries add libraries only for their matching sample ID. At
+least one long- or short-read library is required.
 Final assembly directories are copied to `<outdir>/<sample-id>/`.
 
 Required tools are `seqkit`, `minimap2`, `bowtie2`, `samtools`, `pigz`, and

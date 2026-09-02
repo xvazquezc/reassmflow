@@ -1,19 +1,5 @@
 nextflow.enable.dsl=2
 
-def librariesForSample(id, sampleLibraries, globalLibraries) {
-  def libraryNames=sampleLibraries.libraries ?: []
-  if (libraryNames instanceof CharSequence) {
-    libraryNames=[libraryNames]
-  }
-  def selected=libraryNames.collect { libraryName ->
-    if (!globalLibraries.containsKey(libraryName)) {
-      error "Sample '${id}' selects undefined global library '${libraryName}'."
-    }
-    globalLibraries[libraryName]
-  }
-  [sampleLibraries] + selected
-}
-
 process CONCAT_REFERENCE {
   tag { id }
   label 'mapping'
@@ -146,27 +132,34 @@ workflow {
   }
 
   def raw=params.raw_libraries ?: [:]
-  if (!raw) {
-    error 'Specify at least one sample under raw_libraries.'
+  def globalLibraries=params.global_libraries ?: [:]
+  if (!raw && !globalLibraries) {
+    error 'Specify at least one library under raw_libraries or global_libraries.'
   }
 
-  def globalLibraries=params.global_libraries ?: [:]
   def samples=channel.fromPath(params.input_csv,checkIfExists:true).splitCsv(header:true).map { row -> tuple(row.id as String,file(row.path,checkIfExists:true)) }
   def ref=CONCAT_REFERENCE(samples)
-  def longSpecs=raw.collectMany { id,x -> librariesForSample(id,x,globalLibraries).collectMany { library -> (library.long_reads ?: []).collect { p -> tuple(id as String,p as String) } } }
-  def shortSpecs=raw.collectMany { id,x -> librariesForSample(id,x,globalLibraries).collectMany { library -> (library.short_reads ?: []).withIndex().collect { z,n -> tuple(id as String,"${id}_short_${n+1}",z) } } }
+  def sampleIds=samples.map { id, refdir -> id }
+  def longSpecs=raw.collectMany { id,library -> (library.long_reads ?: []).collect { p -> tuple(id as String,p as String) } }
+  def shortSpecs=raw.collectMany { id,library -> (library.short_reads ?: []).withIndex().collect { z,n -> tuple(id as String,"${id}_short_${n+1}",z) } }
+  def globalLongSpecs=globalLibraries.collectMany { name,library -> (library.long_reads ?: []).collect { p -> p as String } }
+  def globalShortSpecs=globalLibraries.collectMany { name,library -> (library.short_reads ?: []).collect { x -> x } }
 
   def longOut=null
-  if (longSpecs) {
-    def longReads=channel.fromList(longSpecs).flatMap { id,p -> files(p).collect { f -> tuple(id,f) } }
+  if (longSpecs || globalLongSpecs) {
+    def individualLongReads=channel.fromList(longSpecs).flatMap { id,p -> files(p).collect { f -> tuple(id,f) } }
+    def globalLongReads=sampleIds.combine(channel.fromList(globalLongSpecs)).flatMap { id,p -> files(p).collect { f -> tuple(id,f) } }
+    def longReads=individualLongReads.concat(globalLongReads)
     longOut=MERGE_LONG_BAMS(MINIMAP2_MAP(longReads.join(ref.ref)).bam.groupTuple())
     FLYE_META_ASSEMBLY(longOut.reads)
     MYLOASM_ASSEMBLY(longOut.reads)
   }
 
   def shortOut=null
-  if (shortSpecs) {
-    def shortReads=channel.fromList(shortSpecs).map { id,lib,x -> tuple(id,lib,file(x.r1,checkIfExists:true),file(x.r2,checkIfExists:true),x.singletons ? file(x.singletons,checkIfExists:true) : file('/dev/null')) }
+  if (shortSpecs || globalShortSpecs) {
+    def individualShortReads=channel.fromList(shortSpecs).map { id,lib,x -> tuple(id,lib,file(x.r1,checkIfExists:true),file(x.r2,checkIfExists:true),x.singletons ? file(x.singletons,checkIfExists:true) : file('/dev/null')) }
+    def globalShortReads=sampleIds.combine(channel.fromList(globalShortSpecs)).map { id,x -> tuple(id,"${id}_global_short_${x.r1.hashCode()}",file(x.r1,checkIfExists:true),file(x.r2,checkIfExists:true),x.singletons ? file(x.singletons,checkIfExists:true) : file('/dev/null')) }
+    def shortReads=individualShortReads.concat(globalShortReads)
     shortOut=MERGE_SHORT_BAMS(BOWTIE2_MAP(shortReads.join(BOWTIE2_BUILD(ref.ref).index)).bam.groupTuple())
     MEGAHIT_DEFAULT_ASSEMBLY(shortOut.reads)
   }
