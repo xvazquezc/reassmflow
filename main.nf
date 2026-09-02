@@ -44,7 +44,7 @@ process MERGE_LONG_BAMS {
   tuple val(id), path('long_recovered.fastq.gz'), emit: reads
 
   script:
-  """samtools merge -@ ${task.cpus} -f merged.bam ${bams.join(' ')}; samtools fastq -@ ${task.cpus} merged.bam | pigz -p ${task.cpus} > long_recovered.fastq.gz"""
+  """samtools merge -@ ${task.cpus} - ${bams.join(' ')} | samtools fastq -@ ${task.cpus} - | pigz -p ${task.cpus} > long_recovered.fastq.gz"""
 
   stub:
   """touch long_recovered.fastq.gz"""
@@ -143,7 +143,7 @@ process MERGE_SHORT_BAMS {
   tuple val(id), path('sr_R1.fastq.gz'), path('sr_R2.fastq.gz'), path('sr_singles.fastq.gz'), emit: reads
 
   script:
-  """samtools merge -@ ${task.cpus} -f merged.bam ${bams.join(' ')}; samtools sort -@ ${task.cpus} -n merged.bam -o n.bam; samtools fastq -@ ${task.cpus} n.bam -1 sr_R1.fastq.gz -2 sr_R2.fastq.gz -s sr_singles.fastq.gz -0 /dev/null -"""
+  """samtools merge -@ ${task.cpus} - ${bams.join(' ')} | samtools sort -@ ${task.cpus} -n | samtools fastq -@ ${task.cpus} -1 sr_R1.fastq.gz -2 sr_R2.fastq.gz -s sr_singles.fastq.gz -0 /dev/null -"""
 
   stub:
   """touch sr_R1.fastq.gz sr_R2.fastq.gz sr_singles.fastq.gz"""
