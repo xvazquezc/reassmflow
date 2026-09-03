@@ -192,14 +192,10 @@ process SPADES_META_HYBRID {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid'
   mkdir -p "\$(dirname "\$state_dir")"
-  single_arg=()
-  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
-    single_arg=(-s ${s})
-  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid"""
 
@@ -220,14 +216,10 @@ process SPADES_META_HYBRID_KEXT {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid-kext'
   mkdir -p "\$(dirname "\$state_dir")"
-  single_arg=()
-  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
-    single_arg=(-s ${s})
-  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext"""
 
@@ -248,14 +240,10 @@ process SPADES_META_KEXT {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-kext'
   mkdir -p "\$(dirname "\$state_dir")"
-  single_arg=()
-  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
-    single_arg=(-s ${s})
-  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-kext"""
 
@@ -276,14 +264,10 @@ process SPADES_META_HYBRID_KEXT_TRUSTED {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid-kext-trusted'
   mkdir -p "\$(dirname "\$state_dir")"
-  single_arg=()
-  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
-    single_arg=(-s ${s})
-  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} "\${single_arg[@]}" --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
+    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext-trusted"""
 
