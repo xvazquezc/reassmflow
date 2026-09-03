@@ -162,10 +162,14 @@ process MEGAHIT_DEFAULT_ASSEMBLY {
   script:
   """state_dir='${params.outdir}/.resume/${id}/megahit-default'
   mkdir -p "\$(dirname "\$state_dir")"
+  single_arg=()
+  if [[ -n "\$(zcat -f ${single} 2>/dev/null | head -c1)" ]]; then
+    single_arg=(-r ${single})
+  fi
   if [[ -d "\$state_dir" ]]; then
-    megahit -t ${task.cpus} -1 ${r1} -2 ${r2} -r ${single} --continue -o "\$state_dir"
+    megahit -t ${task.cpus} -1 ${r1} -2 ${r2} "\${single_arg[@]}" --continue -o "\$state_dir"
   else
-    megahit -t ${task.cpus} -1 ${r1} -2 ${r2} -r ${single} -o "\$state_dir"
+    megahit -t ${task.cpus} -1 ${r1} -2 ${r2} "\${single_arg[@]}" -o "\$state_dir"
   fi
   kmer=\$(find "\$state_dir/intermediate_contigs" -name 'k*.contigs.fa' -printf '%f\\n' | sed -E 's/^k([0-9]+)\\.contigs\\.fa\$/\\1/' | sort -n | tail -1)
   megahit_toolkit contig2fastg "\$kmer" "\$state_dir/intermediate_contigs/k\${kmer}.contigs.fa" > "\$state_dir/k\${kmer}.contigs.fastg"
@@ -188,10 +192,14 @@ process SPADES_META_HYBRID {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid'
   mkdir -p "\$(dirname "\$state_dir")"
+  single_arg=()
+  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
+    single_arg=(-s ${s})
+  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid"""
 
@@ -212,10 +220,14 @@ process SPADES_META_HYBRID_KEXT {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid-kext'
   mkdir -p "\$(dirname "\$state_dir")"
+  single_arg=()
+  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
+    single_arg=(-s ${s})
+  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext"""
 
@@ -236,10 +248,14 @@ process SPADES_META_KEXT {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-kext'
   mkdir -p "\$(dirname "\$state_dir")"
+  single_arg=()
+  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
+    single_arg=(-s ${s})
+  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -s ${s} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} "\${single_arg[@]}" -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-kext"""
 
@@ -260,10 +276,14 @@ process SPADES_META_HYBRID_KEXT_TRUSTED {
   script:
   """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid-kext-trusted'
   mkdir -p "\$(dirname "\$state_dir")"
+  single_arg=()
+  if [[ -n "\$(zcat -f ${s} 2>/dev/null | head -c1)" ]]; then
+    single_arg=(-s ${s})
+  fi
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
+    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} "\${single_arg[@]}" --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext-trusted"""
 
