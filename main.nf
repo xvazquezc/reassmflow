@@ -263,7 +263,7 @@ process SPADES_META_HYBRID_KEXT_TRUSTED {
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
+    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} -s ${s} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext-trusted"""
 
