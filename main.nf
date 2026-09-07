@@ -250,29 +250,29 @@ process SPADES_META_KEXT {
   stub:
   """mkdir -p spades-meta-kext; touch spades-meta-kext/contigs.fasta"""
 }
-process SPADES_META_HYBRID_KEXT_TRUSTED {
+process SPADES_META_KEXT_TRUSTED {
   tag { id }
   label 'sr_assm'
-  publishDir { "${params.outdir}/${id}/spades-meta-hybrid-kext-trusted" }, mode: 'copy'
+  publishDir { "${params.outdir}/${id}/spades-meta-kext-trusted" }, mode: 'copy'
 
   input:
   tuple val(id), path(r1), path(r2), path(s), path(lr), path(trusted)
 
   output:
-  path 'spades-meta-hybrid-kext-trusted'
+  path 'spades-meta-kext-trusted'
 
   script:
-  """state_dir='${params.outdir}/.resume/${id}/spades-meta-hybrid-kext-trusted'
+  """state_dir='${params.outdir}/.resume/${id}/spades-meta-kext-trusted'
   mkdir -p "\$(dirname "\$state_dir")"
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} --nanopore ${lr} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
+    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
-  cp -a "\$state_dir" spades-meta-hybrid-kext-trusted"""
+  cp -a "\$state_dir" spades-meta-kext-trusted"""
 
   stub:
-  """mkdir -p spades-meta-hybrid-kext-trusted; touch spades-meta-hybrid-kext-trusted/contigs.fasta"""
+  """mkdir -p spades-meta-kext-trusted; touch spades-meta-kext-trusted/contigs.fasta"""
 }
 
 workflow {
@@ -326,6 +326,6 @@ workflow {
     SPADES_META_HYBRID(hybridReads)
     SPADES_META_HYBRID_KEXT(hybridReads)
     SPADES_META_KEXT(hybridReads)
-    SPADES_META_HYBRID_KEXT_TRUSTED(hybridReads.join(ref.ref))
+    SPADES_META_KEXT_TRUSTED(hybridReads.join(ref.ref))
   }
 }
