@@ -195,7 +195,7 @@ process SPADES_META_HYBRID {
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m ${(task.memory.toGiga() * 0.9) as int} --meta -1 ${r1} -2 ${r2} --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid"""
 
@@ -219,7 +219,7 @@ process SPADES_META_HYBRID_KEXT {
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m ${(task.memory.toGiga() * 0.9) as int} --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-hybrid-kext"""
 
@@ -243,7 +243,7 @@ process SPADES_META_KEXT {
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} -m 100 --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
+    spades.py -t ${task.cpus} -m ${(task.memory.toGiga() * 0.9) as int} --meta -1 ${r1} -2 ${r2} -k 21,33,55,77,101,127 --nanopore ${lr} -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-kext"""
 
@@ -267,7 +267,7 @@ process SPADES_META_KEXT_TRUSTED {
   if [[ -d "\$state_dir" ]]; then
     spades.py --continue -o "\$state_dir"
   else
-    spades.py -t ${task.cpus} --meta -m 100 -1 ${r1} -2 ${r2} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
+    spades.py -t ${task.cpus} --meta -m ${(task.memory.toGiga() * 0.9) as int} -1 ${r1} -2 ${r2} --trusted-contigs ${trusted} -k 21,33,55,77,101,127 -o "\$state_dir"
   fi
   cp -a "\$state_dir" spades-meta-kext-trusted"""
 
