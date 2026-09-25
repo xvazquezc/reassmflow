@@ -10,6 +10,11 @@ Example:
 nextflow run main.nf -params-file config.yml
 ```
 
+In Katana, testing:
+```bash
+nextflow run ../../Programs/reassmflow/main.nf -params-file config.example.yml -c ../../Programs/reassmflow/conf/unsw_katana.config -work-dir nf-workdir -resume
+```
+
 Pass `config.yml` explicitly because Nextflow automatically loads
 `nextflow.config`, but not YAML parameter files.
 
